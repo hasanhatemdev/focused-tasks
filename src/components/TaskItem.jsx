@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Calendar, Flag, Trash2, Archive, Circle, CheckCircle2, Clock, Edit2, X, Check, GripVertical, Link2, Repeat } from 'lucide-react';
+import { Calendar, Flag, Trash2, Archive, Circle, CheckCircle2, Clock, Edit2, X, Check, GripVertical, Link2, Repeat, MoreVertical } from 'lucide-react';
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
 
 function TaskItem({ task, projectId, onUpdate, onDelete, allTasks }) {
@@ -12,6 +12,7 @@ function TaskItem({ task, projectId, onUpdate, onDelete, allTasks }) {
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const [showNotes, setShowNotes] = useState(false);
   const [notes, setNotes] = useState(task.notes || '');
+  const [showActionMenu, setShowActionMenu] = useState(false);
 
   const {
     attributes,
@@ -273,24 +274,54 @@ function TaskItem({ task, projectId, onUpdate, onDelete, allTasks }) {
             >
               <GripVertical className="w-3 h-3 text-gray-400" />
             </div>
-            <button
-              onClick={() => setIsEditing(true)}
-              className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
-            >
-              <Edit2 className="w-3 h-3" />
-            </button>
-            <button
-              onClick={handleArchive}
-              className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
-            >
-              <Archive className="w-3 h-3" />
-            </button>
-            <button
-              onClick={() => onDelete(projectId, task.id)}
-              className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowActionMenu(!showActionMenu)}
+                className="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+              >
+                <MoreVertical className="w-3 h-3" />
+              </button>
+              {showActionMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setShowActionMenu(false)}
+                  />
+                  <div className="absolute right-0 top-6 z-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-28">
+                    <button
+                      onClick={() => {
+                        setIsEditing(true);
+                        setShowActionMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 flex items-center space-x-2"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleArchive();
+                        setShowActionMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 flex items-center space-x-2"
+                    >
+                      <Archive className="w-3 h-3" />
+                      <span>Archive</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onDelete(projectId, task.id);
+                        setShowActionMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
         </div>

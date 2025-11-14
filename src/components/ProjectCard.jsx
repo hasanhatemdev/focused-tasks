@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Plus, Trash2, FolderOpen, MoreVertical, Edit2, Check, X, Link2, Palette } from 'lucide-react';
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Plus, Trash2, FolderOpen, MoreVertical, Edit2, Check, X, Link2, Palette, GripVertical } from 'lucide-react';
 import TaskItem from './TaskItem';
 
 function ProjectCard({ project, onAddTask, onUpdateTask, onDeleteTask, onDeleteProject, onUpdateProject, quickAdd, onQuickAddComplete, allTasks }) {
@@ -11,6 +12,21 @@ function ProjectCard({ project, onAddTask, onUpdateTask, onDeleteTask, onDeleteP
   const [editingName, setEditingName] = useState(project.name);
   const [selectedDependencies, setSelectedDependencies] = useState([]);
   const [showColorPicker, setShowColorPicker] = useState(false);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: project.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   const colors = [
     { name: 'Blue', class: 'bg-blue-500', gradient: 'from-blue-50 to-blue-100' },
@@ -54,11 +70,19 @@ function ProjectCard({ project, onAddTask, onUpdateTask, onDeleteTask, onDeleteP
   const doneTasks = activeTasks.filter(t => t.status === 'done').length;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+    <div ref={setNodeRef} style={style} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
       {/* Project Header */}
-      <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-b border-gray-200">
+      <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 flex-1">
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-move p-1 hover:bg-white/50 rounded transition-colors"
+              title="Drag to reorder project"
+            >
+              <GripVertical className="w-4 h-4 text-gray-600" />
+            </div>
             <div className={`w-3 h-3 rounded-full ${project.color}`}></div>
             {isEditingName ? (
               <div className="flex items-center space-x-2 flex-1">
@@ -137,7 +161,7 @@ function ProjectCard({ project, onAddTask, onUpdateTask, onDeleteTask, onDeleteP
         </div>
 
         {/* Task Stats */}
-        <div className="flex items-center space-x-4 mt-3 text-xs font-medium">
+        <div className="flex items-center space-x-4 mt-2 text-xs font-medium">
           <span className="text-gray-700">Todo: <span className="font-bold">{todoTasks}</span></span>
           <span className="text-blue-700">In Progress: <span className="font-bold">{inProgressTasks}</span></span>
           <span className="text-green-700">Done: <span className="font-bold">{doneTasks}</span></span>
@@ -145,7 +169,7 @@ function ProjectCard({ project, onAddTask, onUpdateTask, onDeleteTask, onDeleteP
       </div>
 
       {/* Tasks List */}
-      <div className="flex-1 p-4 space-y-2 overflow-y-auto max-h-[400px] min-h-[200px]">
+      <div className="flex-1 p-3 space-y-2 overflow-y-auto max-h-[300px] min-h-[150px]">
         <SortableContext
           items={project.tasks.map(t => t.id)}
           strategy={verticalListSortingStrategy}
@@ -171,22 +195,22 @@ function ProjectCard({ project, onAddTask, onUpdateTask, onDeleteTask, onDeleteP
       </div>
 
       {/* Add Task */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-2 border-t border-gray-200">
         {showAddTask ? (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <input
               type="text"
               value={newTaskText}
               onChange={(e) => setNewTaskText(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleAddTask()}
               placeholder="Task description..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               autoFocus
             />
             <div className="flex space-x-2">
               <button
                 onClick={handleAddTask}
-                className="flex-1 bg-indigo-600 text-white px-3 py-1.5 text-sm rounded-lg hover:bg-indigo-700 transition-colors"
+                className="flex-1 bg-indigo-600 text-white px-2 py-1 text-sm rounded-lg hover:bg-indigo-700 transition-colors"
               >
                 Add
               </button>
@@ -195,7 +219,7 @@ function ProjectCard({ project, onAddTask, onUpdateTask, onDeleteTask, onDeleteP
                   setShowAddTask(false);
                   setNewTaskText('');
                 }}
-                className="flex-1 bg-gray-100 text-gray-700 px-3 py-1.5 text-sm rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex-1 bg-gray-100 text-gray-700 px-2 py-1 text-sm rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Cancel
               </button>
@@ -204,7 +228,7 @@ function ProjectCard({ project, onAddTask, onUpdateTask, onDeleteTask, onDeleteP
         ) : (
           <button
             onClick={() => setShowAddTask(true)}
-            className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+            className="w-full flex items-center justify-center space-x-2 px-2 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Add task</span>

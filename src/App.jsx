@@ -139,7 +139,7 @@ function App() {
           recurring: recurring,
           lastRecurredAt: null
         };
-        return { ...project, tasks: [...project.tasks, newTask] };
+        return { ...project, tasks: [newTask, ...project.tasks] };
       }
       return project;
     }));
@@ -201,7 +201,7 @@ function App() {
 
               setProjects(prev => prev.map(p =>
                 p.id === project.id
-                  ? { ...p, tasks: [...p.tasks, newTask] }
+                  ? { ...p, tasks: [newTask, ...p.tasks] }
                   : p
               ));
 
@@ -246,27 +246,38 @@ function App() {
   const handleDragEnd = (event) => {
     const { active, over } = event;
 
-    if (active.id !== over.id) {
-      const activeProject = projects.find(p =>
-        p.tasks.some(t => t.id === active.id)
-      );
-      const overProject = projects.find(p =>
-        p.tasks.some(t => t.id === over.id)
-      );
+    if (!over || active.id === over.id) return;
 
-      if (activeProject.id === overProject.id) {
-        setProjects(projects.map(project => {
-          if (project.id === activeProject.id) {
-            const oldIndex = project.tasks.findIndex(t => t.id === active.id);
-            const newIndex = project.tasks.findIndex(t => t.id === over.id);
-            return {
-              ...project,
-              tasks: arrayMove(project.tasks, oldIndex, newIndex)
-            };
-          }
-          return project;
-        }));
-      }
+    // Check if dragging a project
+    const activeProjectIndex = projects.findIndex(p => p.id === active.id);
+    const overProjectIndex = projects.findIndex(p => p.id === over.id);
+
+    if (activeProjectIndex !== -1 && overProjectIndex !== -1) {
+      // Dragging projects
+      setProjects(arrayMove(projects, activeProjectIndex, overProjectIndex));
+      return;
+    }
+
+    // Check if dragging a task
+    const activeProject = projects.find(p =>
+      p.tasks.some(t => t.id === active.id)
+    );
+    const overProject = projects.find(p =>
+      p.tasks.some(t => t.id === over.id)
+    );
+
+    if (activeProject && overProject && activeProject.id === overProject.id) {
+      setProjects(projects.map(project => {
+        if (project.id === activeProject.id) {
+          const oldIndex = project.tasks.findIndex(t => t.id === active.id);
+          const newIndex = project.tasks.findIndex(t => t.id === over.id);
+          return {
+            ...project,
+            tasks: arrayMove(project.tasks, oldIndex, newIndex)
+          };
+        }
+        return project;
+      }));
     }
   };
 
@@ -408,21 +419,25 @@ function App() {
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {filteredProjects.map(project => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onAddTask={addTask}
-              onUpdateTask={updateTask}
-              onDeleteTask={deleteTask}
-              onDeleteProject={deleteProject}
-              onUpdateProject={updateProject}
-              quickAdd={quickAddProject === project.id}
-              onQuickAddComplete={() => setQuickAddProject(null)}
-              allTasks={projects.flatMap(p => p.tasks)}
-            />
-          ))}
+        <SortableContext
+          items={filteredProjects.map(p => p.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {filteredProjects.map(project => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onAddTask={addTask}
+                onUpdateTask={updateTask}
+                onDeleteTask={deleteTask}
+                onDeleteProject={deleteProject}
+                onUpdateProject={updateProject}
+                quickAdd={quickAddProject === project.id}
+                onQuickAddComplete={() => setQuickAddProject(null)}
+                allTasks={projects.flatMap(p => p.tasks)}
+              />
+            ))}
 
           {/* Add Project Card */}
           <div className="bg-white rounded-xl shadow-sm border-2 border-dashed border-gray-300 hover:border-indigo-300 transition-colors">
@@ -466,6 +481,7 @@ function App() {
             )}
           </div>
         </div>
+        </SortableContext>
       </DndContext>
 
       {/* Floating Menu Button */}
